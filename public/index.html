@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PervoyaPopitka AI - Чат с нейросетью</title>
+    <title>PervoyaPopitka AI - AI Чат и Таро</title>
     <style>
         * {
             margin: 0;
@@ -25,8 +25,8 @@
             border-radius: 20px;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
             width: 90%;
-            max-width: 800px;
-            height: 80vh;
+            max-width: 1000px;
+            height: 85vh;
             display: flex;
             flex-direction: column;
             overflow: hidden;
@@ -41,12 +41,50 @@
 
         .header h1 {
             font-size: 24px;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
         }
 
         .header p {
             opacity: 0.9;
             font-size: 14px;
+        }
+
+        .tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 15px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+        }
+
+        .tab:hover {
+            background: #e9ecef;
+        }
+
+        .tab.active {
+            background: white;
+            border-bottom-color: #667eea;
+            color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+        }
+
+        .tab-content.active {
+            display: flex;
         }
 
         .status {
@@ -132,7 +170,7 @@
             border-color: #667eea;
         }
 
-        .send-button {
+        .send-button, .action-button {
             padding: 12px 24px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -143,11 +181,11 @@
             transition: transform 0.2s;
         }
 
-        .send-button:hover {
+        .send-button:hover, .action-button:hover {
             transform: translateY(-2px);
         }
 
-        .send-button:disabled {
+        .send-button:disabled, .action-button:disabled {
             opacity: 0.6;
             cursor: not-allowed;
             transform: none;
@@ -159,6 +197,7 @@
             align-items: center;
             font-size: 12px;
             color: #666;
+            margin-bottom: 10px;
         }
 
         .model-select {
@@ -167,17 +206,60 @@
             border-radius: 15px;
             font-size: 12px;
             outline: none;
+            max-width: 300px;
         }
 
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        .tarot-controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+
+        .spread-button {
+            padding: 8px 16px;
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s;
+        }
+
+        .spread-button:hover {
+            background: #e9ecef;
+        }
+
+        .spread-button.selected {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .card {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .card-title {
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .card-position {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .card-description {
+            font-size: 14px;
+            line-height: 1.4;
         }
 
         .typing-indicator {
@@ -208,6 +290,17 @@
             }
         }
 
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
         @media (max-width: 600px) {
             .container {
                 width: 95%;
@@ -225,14 +318,28 @@
             .send-button {
                 align-self: stretch;
             }
+
+            .tabs {
+                font-size: 12px;
+            }
+
+            .tab {
+                padding: 12px 8px;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>🤖 PervoyaPopitka AI</h1>
-            <p>Чат с нейросетью через OpenRouter</p>
+            <h1>🤖🔮 PervoyaPopitka AI</h1>
+            <p>AI Чат и Таро расклады</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('chat')">🤖 AI Чат</button>
+            <button class="tab" onclick="switchTab('tarot')">🔮 Таро</button>
+            <button class="tab" onclick="switchTab('combo')">✨ AI + Таро</button>
         </div>
         
         <div class="status" id="status">
@@ -240,48 +347,117 @@
             <span id="model-info">Модель: загрузка...</span>
         </div>
         
-        <div class="chat-container" id="chatContainer">
-            <div class="message ai">
-                Привет! 👋 Я AI-ассистент, работающий на базе модели Qwen3-14B. 
-                Задавайте любые вопросы - я готов помочь с программированием, объяснениями, творчеством и многим другим!
-            </div>
-        </div>
-        
-        <div class="input-container">
-            <div class="model-selector">
-                <label for="modelSelect">Модель:</label>
-                <select id="modelSelect" class="model-select">
-                    <option value="qwen/qwen3-14b:free">Qwen3-14B (универсальная)</option>
-                    <option value="qwen/qwen3-30b-a3b:free">Qwen3-30B (мощная)</option>
-                    <option value="qwen/qwq-32b:free">QwQ-32B (для рассуждений)</option>
-                </select>
+        <!-- AI Чат -->
+        <div class="tab-content active" id="chat-tab">
+            <div class="chat-container" id="chatContainer">
+                <div class="message ai">
+                    Привет! 👋 Я AI-ассистент с доступом к множеству бесплатных моделей. 
+                    Задавайте любые вопросы - программирование, творчество, советы и многое другое!
+                </div>
             </div>
             
-            <div class="input-group">
-                <input 
-                    type="text" 
-                    id="messageInput" 
-                    class="input-field" 
-                    placeholder="Введите ваше сообщение..."
-                    maxlength="4000"
-                >
-                <button id="sendButton" class="send-button">Отправить</button>
+            <div class="input-container">
+                <div class="model-selector">
+                    <label for="modelSelect">Модель:</label>
+                    <select id="modelSelect" class="model-select">
+                        <option value="">Загрузка моделей...</option>
+                    </select>
+                </div>
+                
+                <div class="input-group">
+                    <input 
+                        type="text" 
+                        id="messageInput" 
+                        class="input-field" 
+                        placeholder="Введите ваше сообщение..."
+                        maxlength="4000"
+                    >
+                    <button id="sendButton" class="send-button">Отправить</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Таро -->
+        <div class="tab-content" id="tarot-tab">
+            <div class="chat-container" id="tarotContainer">
+                <div class="message ai">
+                    🔮 Добро пожаловать в мир Таро! Выберите тип расклада и задайте вопрос для получения мудрых советов.
+                </div>
+            </div>
+            
+            <div class="input-container">
+                <div class="tarot-controls" id="tarotControls">
+                    <!-- Кнопки раскладов будут добавлены динамически -->
+                </div>
+                
+                <div class="input-group">
+                    <input 
+                        type="text" 
+                        id="tarotQuestion" 
+                        class="input-field" 
+                        placeholder="Задайте ваш вопрос (необязательно)..."
+                        maxlength="500"
+                    >
+                    <button id="createSpreadButton" class="action-button">Создать расклад</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI + Таро -->
+        <div class="tab-content" id="combo-tab">
+            <div class="chat-container" id="comboContainer">
+                <div class="message ai">
+                    ✨ Здесь вы можете получить AI интерпретацию ваших Таро раскладов! 
+                    Сначала создайте расклад, а затем получите глубокий AI анализ.
+                </div>
+            </div>
+            
+            <div class="input-container">
+                <div class="input-group">
+                    <input 
+                        type="text" 
+                        id="comboQuestion" 
+                        class="input-field" 
+                        placeholder="Задайте вопрос для AI интерпретации Таро..."
+                        maxlength="500"
+                    >
+                    <button id="randomSpreadButton" class="action-button">Случайный расклад + AI</button>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
-        const chatContainer = document.getElementById('chatContainer');
-        const messageInput = document.getElementById('messageInput');
-        const sendButton = document.getElementById('sendButton');
+        // Глобальные переменные
+        let isLoading = false;
+        let availableModels = [];
+        let availableSpreads = [];
+        let selectedSpreadType = '';
+        let lastSpread = null;
+
+        // Элементы DOM
         const statusElement = document.getElementById('status');
         const statusText = document.getElementById('status-text');
         const modelInfo = document.getElementById('model-info');
         const modelSelect = document.getElementById('modelSelect');
+        const messageInput = document.getElementById('messageInput');
+        const sendButton = document.getElementById('sendButton');
+        const chatContainer = document.getElementById('chatContainer');
+        const tarotContainer = document.getElementById('tarotContainer');
+        const comboContainer = document.getElementById('comboContainer');
 
-        let isLoading = false;
+        // Переключение табов
+        function switchTab(tabName) {
+            // Скрываем все табы
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            
+            // Показываем выбранный таб
+            document.getElementById(tabName + '-tab').classList.add('active');
+            event.target.classList.add('active');
+        }
 
-        // Проверка статуса API при загрузке
+        // Проверка статуса API
         async function checkStatus() {
             try {
                 const response = await fetch('/api/health');
@@ -302,8 +478,62 @@
             }
         }
 
+        // Загрузка моделей
+        async function loadModels() {
+            try {
+                const response = await fetch('/api/models');
+                const data = await response.json();
+                availableModels = data.models;
+                
+                modelSelect.innerHTML = '';
+                availableModels.forEach(model => {
+                    const option = document.createElement('option');
+                    option.value = model.id;
+                    option.textContent = `${model.name} - ${model.description}`;
+                    modelSelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Ошибка загрузки моделей:', error);
+                modelSelect.innerHTML = '<option value="">Ошибка загрузки моделей</option>';
+            }
+        }
+
+        // Загрузка типов раскладов
+        async function loadSpreads() {
+            try {
+                const response = await fetch('/api/tarot/spreads');
+                const data = await response.json();
+                availableSpreads = data.spreads;
+                
+                const tarotControls = document.getElementById('tarotControls');
+                tarotControls.innerHTML = '';
+                
+                availableSpreads.forEach(spread => {
+                    const button = document.createElement('button');
+                    button.className = 'spread-button';
+                    button.textContent = `${spread.emoji} ${spread.name} (${spread.card_count})`;
+                    button.onclick = () => selectSpread(spread.id, button);
+                    tarotControls.appendChild(button);
+                });
+                
+                // Выбираем первый расклад по умолчанию
+                if (availableSpreads.length > 0) {
+                    selectSpread(availableSpreads[0].id, tarotControls.firstChild);
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки раскладов:', error);
+            }
+        }
+
+        // Выбор типа расклада
+        function selectSpread(spreadId, buttonElement) {
+            document.querySelectorAll('.spread-button').forEach(btn => btn.classList.remove('selected'));
+            buttonElement.classList.add('selected');
+            selectedSpreadType = spreadId;
+        }
+
         // Добавление сообщения в чат
-        function addMessage(content, isUser = false, isLoading = false) {
+        function addMessage(content, isUser = false, isLoading = false, container = chatContainer) {
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${isUser ? 'user' : 'ai'}${isLoading ? ' loading' : ''}`;
             
@@ -317,50 +547,69 @@
                     </div>
                 `;
             } else {
-                messageDiv.textContent = content;
+                messageDiv.innerHTML = content;
             }
             
-            chatContainer.appendChild(messageDiv);
-            chatContainer.scrollTop = chatContainer.scrollHeight;
+            container.appendChild(messageDiv);
+            container.scrollTop = container.scrollHeight;
             
             return messageDiv;
         }
 
-        // Отправка сообщения
+        // Отображение Таро расклада
+        function displayTarotSpread(spread, container = tarotContainer) {
+            const spreadDiv = document.createElement('div');
+            spreadDiv.className = 'message ai';
+            
+            let html = `<h3>${spread.emoji} ${spread.name}</h3>`;
+            if (spread.question) {
+                html += `<p><strong>Ваш вопрос:</strong> ${spread.question}</p>`;
+            }
+            html += `<p><em>${spread.description}</em></p>`;
+            
+            spread.cards.forEach((card, index) => {
+                html += `
+                    <div class="card">
+                        <div class="card-title">${card.card_data.name}${card.is_reversed ? ' (перевернута)' : ''}</div>
+                        <div class="card-position">${index + 1}. ${card.position}</div>
+                        <div class="card-description">${card.card_data.description}</div>
+                    </div>
+                `;
+            });
+            
+            spreadDiv.innerHTML = html;
+            container.appendChild(spreadDiv);
+            container.scrollTop = container.scrollHeight;
+            
+            return spreadDiv;
+        }
+
+        // Отправка сообщения AI
         async function sendMessage() {
             const message = messageInput.value.trim();
             if (!message || isLoading) return;
 
-            // Добавляем сообщение пользователя
             addMessage(message, true);
             messageInput.value = '';
             
-            // Показываем индикатор загрузки
             isLoading = true;
             sendButton.disabled = true;
             sendButton.textContent = 'Отправка...';
             
-            const loadingMessage = addMessage('', false, true);
+            const loadingMessage = addMessage('', false, true, chatContainer);
 
             try {
                 const response = await fetch('/api/chat', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         message: message,
                         model: modelSelect.value,
-                        options: {
-                            max_tokens: 1000,
-                            temperature: 0.7
-                        }
+                        options: { max_tokens: 1500, temperature: 0.7 }
                     })
                 });
 
                 const data = await response.json();
-                
-                // Удаляем индикатор загрузки
                 chatContainer.removeChild(loadingMessage);
                 
                 if (response.ok) {
@@ -381,6 +630,111 @@
             }
         }
 
+        // Создание Таро расклада
+        async function createTarotSpread() {
+            if (!selectedSpreadType) {
+                addMessage('Пожалуйста, выберите тип расклада', false, false, tarotContainer);
+                return;
+            }
+
+            const question = document.getElementById('tarotQuestion').value.trim();
+            const createButton = document.getElementById('createSpreadButton');
+            
+            createButton.disabled = true;
+            createButton.textContent = 'Создание...';
+            
+            const loadingMessage = addMessage('', false, true, tarotContainer);
+
+            try {
+                const response = await fetch('/api/tarot/spread', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        type: selectedSpreadType,
+                        question: question
+                    })
+                });
+
+                const data = await response.json();
+                tarotContainer.removeChild(loadingMessage);
+                
+                if (response.ok) {
+                    lastSpread = data.spread;
+                    displayTarotSpread(data.spread);
+                } else {
+                    addMessage(`Ошибка: ${data.error}`, false, false, tarotContainer);
+                }
+            } catch (error) {
+                tarotContainer.removeChild(loadingMessage);
+                addMessage(`Ошибка сети: ${error.message}`, false, false, tarotContainer);
+                console.error('Ошибка создания расклада:', error);
+            } finally {
+                createButton.disabled = false;
+                createButton.textContent = 'Создать расклад';
+            }
+        }
+
+        // Случайный расклад с AI интерпретацией
+        async function createRandomSpreadWithAI() {
+            const question = document.getElementById('comboQuestion').value.trim();
+            const randomButton = document.getElementById('randomSpreadButton');
+            
+            randomButton.disabled = true;
+            randomButton.textContent = 'Создание...';
+            
+            const loadingMessage = addMessage('', false, true, comboContainer);
+
+            try {
+                // Создаем случайный расклад
+                const spreadResponse = await fetch('/api/tarot/random', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question: question })
+                });
+
+                const spreadData = await spreadResponse.json();
+                
+                if (!spreadResponse.ok) {
+                    throw new Error(spreadData.error);
+                }
+
+                comboContainer.removeChild(loadingMessage);
+                displayTarotSpread(spreadData.spread, comboContainer);
+                
+                // Получаем AI интерпретацию
+                const interpretLoadingMessage = addMessage('', false, true, comboContainer);
+                
+                const interpretResponse = await fetch('/api/tarot/interpret', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        spread: spreadData.spread,
+                        question: question
+                    })
+                });
+
+                const interpretData = await interpretResponse.json();
+                comboContainer.removeChild(interpretLoadingMessage);
+                
+                if (interpretResponse.ok) {
+                    const aiMessage = `🤖 <strong>AI Интерпретация:</strong><br><br>${interpretData.interpretation}`;
+                    addMessage(aiMessage, false, false, comboContainer);
+                } else {
+                    addMessage(`Ошибка AI интерпретации: ${interpretData.error}`, false, false, comboContainer);
+                }
+                
+            } catch (error) {
+                if (comboContainer.contains(loadingMessage)) {
+                    comboContainer.removeChild(loadingMessage);
+                }
+                addMessage(`Ошибка: ${error.message}`, false, false, comboContainer);
+                console.error('Ошибка создания расклада с AI:', error);
+            } finally {
+                randomButton.disabled = false;
+                randomButton.textContent = 'Случайный расклад + AI';
+            }
+        }
+
         // Обработчики событий
         sendButton.addEventListener('click', sendMessage);
         
@@ -391,17 +745,28 @@
             }
         });
 
+        document.getElementById('createSpreadButton').addEventListener('click', createTarotSpread);
+        document.getElementById('randomSpreadButton').addEventListener('click', createRandomSpreadWithAI);
+
         modelSelect.addEventListener('change', () => {
-            const selectedModel = modelSelect.options[modelSelect.selectedIndex].text;
-            addMessage(`Переключено на модель: ${selectedModel}`, false);
+            const selectedModel = modelSelect.options[modelSelect.selectedIndex];
+            if (selectedModel) {
+                addMessage(`Переключено на модель: ${selectedModel.textContent}`, false);
+            }
         });
 
         // Инициализация
-        checkStatus();
-        messageInput.focus();
-        
-        // Периодическая проверка статуса
-        setInterval(checkStatus, 30000);
+        async function init() {
+            await checkStatus();
+            await loadModels();
+            await loadSpreads();
+            messageInput.focus();
+            
+            // Периодическая проверка статуса
+            setInterval(checkStatus, 30000);
+        }
+
+        init();
     </script>
 </body>
 </html>

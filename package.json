@@ -1,21 +1,26 @@
 {
   "name": "pervoyapopitka-ai",
   "version": "1.0.0",
-  "description": "AI-powered project using OpenRouter",
+  "description": "AI-powered project using OpenRouter with Telegram bot and Tarot reading",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
     "dev": "node --watch index.js",
+    "bot": "node bot/telegram-bot.js",
+    "start-all": "node start-all.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": ["ai", "openrouter", "qwen", "chatbot"],
+  "keywords": ["ai", "openrouter", "qwen", "chatbot", "telegram", "tarot"],
   "author": "",
   "license": "MIT",
   "dependencies": {
     "axios": "^1.6.2",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
-    "cors": "^2.8.5"
+    "cors": "^2.8.5",
+    "node-telegram-bot-api": "^0.64.0",
+    "fs": "^0.0.1-security",
+    "path": "^0.12.7"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"

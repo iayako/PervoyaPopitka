@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PervoyaPopitka AI - Чат с нейросетью</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 800px;
+            height: 80vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .status {
+            padding: 10px 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            font-size: 12px;
+            color: #666;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .status.healthy {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .chat-container {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .message {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            word-wrap: break-word;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .message.user {
+            align-self: flex-end;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .message.ai {
+            align-self: flex-start;
+            background: #f1f3f4;
+            color: #333;
+            border: 1px solid #e0e0e0;
+        }
+
+        .message.loading {
+            background: #f1f3f4;
+            color: #666;
+            font-style: italic;
+        }
+
+        .input-container {
+            padding: 20px;
+            border-top: 1px solid #e9ecef;
+            background: white;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .input-field {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e9ecef;
+            border-radius: 25px;
+            outline: none;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .input-field:focus {
+            border-color: #667eea;
+        }
+
+        .send-button {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: transform 0.2s;
+        }
+
+        .send-button:hover {
+            transform: translateY(-2px);
+        }
+
+        .send-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .model-selector {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .model-select {
+            padding: 5px 10px;
+            border: 1px solid #e9ecef;
+            border-radius: 15px;
+            font-size: 12px;
+            outline: none;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+        }
+
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            background: #667eea;
+            border-radius: 50%;
+            animation: typing 1.4s infinite ease-in-out;
+        }
+
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 80%, 100% {
+                transform: scale(0);
+                opacity: 0.5;
+            }
+            40% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                width: 95%;
+                height: 90vh;
+            }
+            
+            .message {
+                max-width: 85%;
+            }
+            
+            .input-group {
+                flex-direction: column;
+            }
+            
+            .send-button {
+                align-self: stretch;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 PervoyaPopitka AI</h1>
+            <p>Чат с нейросетью через OpenRouter</p>
+        </div>
+        
+        <div class="status" id="status">
+            <span id="status-text">Проверка подключения...</span>
+            <span id="model-info">Модель: загрузка...</span>
+        </div>
+        
+        <div class="chat-container" id="chatContainer">
+            <div class="message ai">
+                Привет! 👋 Я AI-ассистент, работающий на базе модели Qwen3-14B. 
+                Задавайте любые вопросы - я готов помочь с программированием, объяснениями, творчеством и многим другим!
+            </div>
+        </div>
+        
+        <div class="input-container">
+            <div class="model-selector">
+                <label for="modelSelect">Модель:</label>
+                <select id="modelSelect" class="model-select">
+                    <option value="qwen/qwen3-14b:free">Qwen3-14B (универсальная)</option>
+                    <option value="qwen/qwen3-30b-a3b:free">Qwen3-30B (мощная)</option>
+                    <option value="qwen/qwq-32b:free">QwQ-32B (для рассуждений)</option>
+                </select>
+            </div>
+            
+            <div class="input-group">
+                <input 
+                    type="text" 
+                    id="messageInput" 
+                    class="input-field" 
+                    placeholder="Введите ваше сообщение..."
+                    maxlength="4000"
+                >
+                <button id="sendButton" class="send-button">Отправить</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const chatContainer = document.getElementById('chatContainer');
+        const messageInput = document.getElementById('messageInput');
+        const sendButton = document.getElementById('sendButton');
+        const statusElement = document.getElementById('status');
+        const statusText = document.getElementById('status-text');
+        const modelInfo = document.getElementById('model-info');
+        const modelSelect = document.getElementById('modelSelect');
+
+        let isLoading = false;
+
+        // Проверка статуса API при загрузке
+        async function checkStatus() {
+            try {
+                const response = await fetch('/api/health');
+                const data = await response.json();
+                
+                if (data.status === 'healthy') {
+                    statusElement.className = 'status healthy';
+                    statusText.textContent = '✅ Подключение активно';
+                    modelInfo.textContent = `Модель: ${data.model}`;
+                } else {
+                    statusElement.className = 'status error';
+                    statusText.textContent = '❌ Проблема с подключением';
+                }
+            } catch (error) {
+                statusElement.className = 'status error';
+                statusText.textContent = '❌ Ошибка подключения';
+                console.error('Ошибка проверки статуса:', error);
+            }
+        }
+
+        // Добавление сообщения в чат
+        function addMessage(content, isUser = false, isLoading = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user' : 'ai'}${isLoading ? ' loading' : ''}`;
+            
+            if (isLoading) {
+                messageDiv.innerHTML = `
+                    <div class="typing-indicator">
+                        <span>AI думает</span>
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                    </div>
+                `;
+            } else {
+                messageDiv.textContent = content;
+            }
+            
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            
+            return messageDiv;
+        }
+
+        // Отправка сообщения
+        async function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message || isLoading) return;
+
+            // Добавляем сообщение пользователя
+            addMessage(message, true);
+            messageInput.value = '';
+            
+            // Показываем индикатор загрузки
+            isLoading = true;
+            sendButton.disabled = true;
+            sendButton.textContent = 'Отправка...';
+            
+            const loadingMessage = addMessage('', false, true);
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        model: modelSelect.value,
+                        options: {
+                            max_tokens: 1000,
+                            temperature: 0.7
+                        }
+                    })
+                });
+
+                const data = await response.json();
+                
+                // Удаляем индикатор загрузки
+                chatContainer.removeChild(loadingMessage);
+                
+                if (response.ok) {
+                    addMessage(data.response);
+                    modelInfo.textContent = `Модель: ${data.model}`;
+                } else {
+                    addMessage(`Ошибка: ${data.error}`);
+                }
+            } catch (error) {
+                chatContainer.removeChild(loadingMessage);
+                addMessage(`Ошибка сети: ${error.message}`);
+                console.error('Ошибка отправки сообщения:', error);
+            } finally {
+                isLoading = false;
+                sendButton.disabled = false;
+                sendButton.textContent = 'Отправить';
+                messageInput.focus();
+            }
+        }
+
+        // Обработчики событий
+        sendButton.addEventListener('click', sendMessage);
+        
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        modelSelect.addEventListener('change', () => {
+            const selectedModel = modelSelect.options[modelSelect.selectedIndex].text;
+            addMessage(`Переключено на модель: ${selectedModel}`, false);
+        });
+
+        // Инициализация
+        checkStatus();
+        messageInput.focus();
+        
+        // Периодическая проверка статуса
+        setInterval(checkStatus, 30000);
+    </script>
+</body>
+</html>
